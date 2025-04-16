@@ -14,13 +14,11 @@ public class Employee {
     private boolean isForeigner;
     private Gender gender;
 
-    private int monthWorkingInYear;
     private int monthlySalary;
     private int otherMonthlyIncome;
     private int annualDeductible;
 
-    private String spouseName;
-    private String spouseIdNumber;
+    private Spouse spouse;
 
     private List<String> childNames;
     private List<String> childIdNumbers;
@@ -109,9 +107,8 @@ public class Employee {
         this.otherMonthlyIncome = income;
     }
 
-    public void setSpouse(String spouseName, String spouseIdNumber) {
-        this.spouseName = spouseName;
-        this.spouseIdNumber = spouseIdNumber;
+    public void setSpouse(String name, String idNumber) {
+        this.spouse = new Spouse(name, idNumber);
     }
 
     public void addChild(String childName, String childIdNumber) {
@@ -119,17 +116,9 @@ public class Employee {
         childIdNumbers.add(childIdNumber);
     }
 
-    private int calculateWorkingMonthsThisYear() {
-        LocalDate currentDate = LocalDate.now();
-        if (currentDate.getYear() == joinDate.getYear()) {
-            return currentDate.getMonthValue() - joinDate.getMonth();
-        }
-        return 12;
-    }
-
     public int getAnnualIncomeTax() {
-        int monthsWorked = calculateWorkingMonthsThisYear();
-        boolean hasSpouse = spouseIdNumber != null && !spouseIdNumber.isEmpty();
+        int monthsWorked = joinDate.getWorkingMonthsThisYear();
+        boolean hasSpouse = spouse != null && !spouse.isEmpty();
 
         return TaxFunction.calculateTax(
             monthlySalary,
@@ -180,6 +169,14 @@ public class Employee {
             return LocalDate.of(year, month, day);
         }
 
+        public int getWorkingMonthsThisYear() {
+            LocalDate now = LocalDate.now();
+            if (now.getYear() == this.year) {
+                return now.getMonthValue() - this.month;
+            }
+            return 12;
+        }
+
         public int getYear() {
             return year;
         }
@@ -190,6 +187,29 @@ public class Employee {
 
         public int getDay() {
             return day;
+        }
+    }
+
+    // Inner class: Spouse
+    public static class Spouse {
+        private String name;
+        private String idNumber;
+
+        public Spouse(String name, String idNumber) {
+            this.name = name;
+            this.idNumber = idNumber;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getIdNumber() {
+            return idNumber;
+        }
+
+        public boolean isEmpty() {
+            return idNumber == null || idNumber.isEmpty();
         }
     }
 
