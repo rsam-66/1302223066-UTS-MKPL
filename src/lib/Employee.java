@@ -7,19 +7,14 @@ import java.util.List;
 public class Employee {
 
     private String employeeId;
-    private String firstName;
-    private String lastName;
+    private Name name;
     private String idNumber;
     private String address;
-
-    private int yearJoined;
-    private int monthJoined;
-    private int dayJoined;
-    private int monthWorkingInYear;
-
+    private JoinDate joinDate;
     private boolean isForeigner;
-    private boolean gender; // true = Laki-laki, false = Perempuan
+    private Gender gender;
 
+    private int monthWorkingInYear;
     private int monthlySalary;
     private int otherMonthlyIncome;
     private int annualDeductible;
@@ -30,49 +25,35 @@ public class Employee {
     private List<String> childNames;
     private List<String> childIdNumbers;
 
-    // ? Private constructor digunakan oleh Builder
-    private Employee(String employeeId, String firstName, String lastName, String idNumber, String address,
-                     int yearJoined, int monthJoined, int dayJoined, boolean isForeigner, boolean gender) {
+    private Employee(String employeeId, Name name, String idNumber, String address,
+                     JoinDate joinDate, boolean isForeigner, Gender gender) {
         this.employeeId = employeeId;
-        this.firstName = firstName;
-        this.lastName = lastName;
+        this.name = name;
         this.idNumber = idNumber;
         this.address = address;
-        this.yearJoined = yearJoined;
-        this.monthJoined = monthJoined;
-        this.dayJoined = dayJoined;
+        this.joinDate = joinDate;
         this.isForeigner = isForeigner;
         this.gender = gender;
-
         this.childNames = new LinkedList<>();
         this.childIdNumbers = new LinkedList<>();
     }
 
-    // ? Static Builder Class
     public static class EmployeeBuilder {
         private String employeeId;
-        private String firstName;
-        private String lastName;
+        private Name name;
         private String idNumber;
         private String address;
-        private int yearJoined;
-        private int monthJoined;
-        private int dayJoined;
+        private JoinDate joinDate;
         private boolean isForeigner;
-        private boolean gender;
+        private Gender gender;
 
         public EmployeeBuilder setEmployeeId(String employeeId) {
             this.employeeId = employeeId;
             return this;
         }
 
-        public EmployeeBuilder setFirstName(String firstName) {
-            this.firstName = firstName;
-            return this;
-        }
-
-        public EmployeeBuilder setLastName(String lastName) {
-            this.lastName = lastName;
+        public EmployeeBuilder setName(Name name) {
+            this.name = name;
             return this;
         }
 
@@ -86,10 +67,8 @@ public class Employee {
             return this;
         }
 
-        public EmployeeBuilder setJoinDate(int year, int month, int day) {
-            this.yearJoined = year;
-            this.monthJoined = month;
-            this.dayJoined = day;
+        public EmployeeBuilder setJoinDate(JoinDate joinDate) {
+            this.joinDate = joinDate;
             return this;
         }
 
@@ -98,35 +77,27 @@ public class Employee {
             return this;
         }
 
-        public EmployeeBuilder setGender(boolean gender) {
+        public EmployeeBuilder setGender(Gender gender) {
             this.gender = gender;
             return this;
         }
 
         public Employee build() {
-            return new Employee(employeeId, firstName, lastName, idNumber, address,
-                                yearJoined, monthJoined, dayJoined, isForeigner, gender);
+            return new Employee(employeeId, name, idNumber, address, joinDate, isForeigner, gender);
         }
     }
-
-    // ==== Sisa method tetap seperti sebelumnya ====
 
     public void setMonthlySalary(int grade) {
         if (grade == 1) {
             monthlySalary = 3000000;
-            if (isForeigner) {
-                monthlySalary = (int) (3000000 * 1.5);
-            }
         } else if (grade == 2) {
             monthlySalary = 5000000;
-            if (isForeigner) {
-                monthlySalary = (int) (5000000 * 1.5);
-            }
         } else if (grade == 3) {
             monthlySalary = 7000000;
-            if (isForeigner) {
-                monthlySalary = (int) (7000000 * 1.5);
-            }
+        }
+
+        if (isForeigner) {
+            monthlySalary = (int) (monthlySalary * 1.5);
         }
     }
 
@@ -149,22 +120,82 @@ public class Employee {
     }
 
     private int calculateWorkingMonthsThisYear() {
-        LocalDate date = LocalDate.now();
-        if (date.getYear() == yearJoined) {
-            return date.getMonthValue() - monthJoined;
+        LocalDate currentDate = LocalDate.now();
+        if (currentDate.getYear() == joinDate.getYear()) {
+            return currentDate.getMonthValue() - joinDate.getMonth();
         }
         return 12;
     }
 
     public int getAnnualIncomeTax() {
         int monthsWorked = calculateWorkingMonthsThisYear();
+        boolean hasSpouse = spouseIdNumber != null && !spouseIdNumber.isEmpty();
+
         return TaxFunction.calculateTax(
-                monthlySalary,
-                otherMonthlyIncome,
-                monthsWorked,
-                annualDeductible,
-                spouseIdNumber == null || spouseIdNumber.equals(""),
-                childIdNumbers.size()
+            monthlySalary,
+            otherMonthlyIncome,
+            monthsWorked,
+            annualDeductible,
+            !hasSpouse,
+            childIdNumbers.size()
         );
+    }
+
+    // Inner class: Name
+    public static class Name {
+        private String firstName;
+        private String lastName;
+
+        public Name(String firstName, String lastName) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+        }
+
+        public String getFullName() {
+            return firstName + " " + lastName;
+        }
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public String getLastName() {
+            return lastName;
+        }
+    }
+
+    // Inner class: JoinDate
+    public static class JoinDate {
+        private int year;
+        private int month;
+        private int day;
+
+        public JoinDate(int year, int month, int day) {
+            this.year = year;
+            this.month = month;
+            this.day = day;
+        }
+
+        public LocalDate toLocalDate() {
+            return LocalDate.of(year, month, day);
+        }
+
+        public int getYear() {
+            return year;
+        }
+
+        public int getMonth() {
+            return month;
+        }
+
+        public int getDay() {
+            return day;
+        }
+    }
+
+    // Inner enum: Gender
+    public enum Gender {
+        MALE,
+        FEMALE
     }
 }
